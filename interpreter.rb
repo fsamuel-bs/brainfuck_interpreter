@@ -15,13 +15,13 @@ class Brainfuck
     @output = ""
 
     # Helper structures:
-    @hash_brackets = {} # Stores a pair <key, value> = <Close bracket position, Open bracket position>
+    @hash_brackets = {} # Stores a pair <key, value> = <Open bracket position, Close bracket position>
     @flag_read_next = false
 
     pre_processing_brackets
 
     while(@pointer_input < @input_array.size)
-      translate(@input_array[@pointer_input], @pointer_input)
+      translate
       @pointer_input += 1
     end
 
@@ -46,44 +46,25 @@ class Brainfuck
   end
 
   # Translate the character 'c' with the list having a pointer input at 'i'
-  def translate(c, i)
+  def translate
     if @flag_read_next == true
       @array[@pos] = c.each_byte.first
       @flag_read_next = false
       return
     end
 
-    case c
+    case @input_array[@pointer_input]
     when ">" then @pos += 1
     when "<" then @pos -= 1
     when "+" then @array[@pos] += 1
     when "-" then @array[@pos] -= 1
     when "." then @output << @array[@pos] != 10 ? @array[@pos].chr : (10.chr + 13.chr) # \n conversion to \n \r
     when "," then @flag_read_next = true
-    when "[" then start_loop(i)
-    when "]" then # No-Op
+    when "[" then @pointer_input = @hash_brackets[@pointer_input] if @array[@pos] == 0
+    when "]" then @pointer_input = @hash_brackets.invert[@pointer_input] if @array[@pos] != 0
     end
   end
 
- def start_loop(i)
-    # Jump pointer input to corresponding ']'
-    @pointer_input = @hash_brackets[i] if @hash_brackets[i] > @pointer_input
-
-    # Finding limits of interation:
-    first = i + 1
-    last = @hash_brackets[i] - 1
-
-    flag_stop = false
-    pos_to_zero = @pos
-
-    while flag_stop == false
-      for i in first..last
-        c = @input_array[i]
-        translate(c, i + first)
-        flag_stop = true if @array[pos_to_zero] == 0
-      end
-    end
-  end
 end
 
 Brainfuck.new
